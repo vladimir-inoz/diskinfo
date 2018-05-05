@@ -4,7 +4,7 @@
 #include <QStringList>
 #include <QVariant>
 #include <vector>
-#include <tuple>
+#include <memory>
 #include <windows.h>
 
 //возвращение строки с размером файла в читаемом формате
@@ -17,23 +17,30 @@ void parseDriveLayout(const DRIVE_LAYOUT_INFORMATION_EX &pdg);
 
 BOOL GetDriveGeometry(LPWSTR wszPath, DISK_GEOMETRY *pdg);
 
-QStringList getPhysicalDisks(const QStringList &drivesList);
+QStringList getPhysicalDisks();
 
 QStringList getDrivesList();
 
 //информация о разделах для отображения
 struct PartitionData
 {
-    QString partitionName;
+    //информация для отображения в модели
+    QString partitionName; //имя раздела для отображения
     QString location;
     QString type;
-    QString fs_type;
+    QString fs_type; //тип файловой системы
     QString state;
-    double capacity;
-    double free_space;
+    double capacity; //объем
+    double free_space; //свободное место
+
+    //служебная информация
+    bool is_mounted;
+    DWORD disk_number; //номер физического диска, на котором расположен раздел
+    LARGE_INTEGER offset; //начало
+    LARGE_INTEGER length; //длина
 };
 
-using PartitionTable = std::vector<PartitionData>;
+using PartitionTable = std::vector<std::shared_ptr<PartitionData>>;
 
 //получение информации о всех разделах
 PartitionTable getAllPartitions();

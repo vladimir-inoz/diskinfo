@@ -19,7 +19,7 @@ QVariant PartitionsTableModel::data(const QModelIndex &index, int role) const
 {
     if (role == Qt::DisplayRole)
     {
-        const PartitionData &data = table[index.row()];
+        const PartitionData &data = *table[index.row()].get();
         switch (index.column())
         {
         case 0 : return data.partitionName;

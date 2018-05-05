@@ -18,18 +18,26 @@ QString humanSize(double size) {
 }
 
 //парсинг структуры с информацией о разделе диска
-void parseDriveLayout(const DRIVE_LAYOUT_INFORMATION_EX &pdg, QString devName, PartitionTable &table)
+PartitionTable parseDriveLayout(DRIVE_LAYOUT_INFORMATION_EX *pdg, QString devName)
 {
-    for (DWORD i = 0; i < pdg.PartitionCount; i++)
+    PartitionTable result;
+
+    for (DWORD i = 0; i < pdg->PartitionCount; i++)
     {
-        PartitionData data;
-        data.partitionName = devName + " partition " + QString::number(pdg.PartitionEntry[i].PartitionNumber);
+        //создаем новую струтуру PartitionData
+        std::shared_ptr<PartitionData> data = std::make_shared<PartitionData>();
+        data->partitionName = devName + " partition " + QString::number(pdg->PartitionEntry[i].PartitionNumber);
 
-        data.capacity = pdg.PartitionEntry[i].PartitionLength.QuadPart;
-        data.free_space = data.capacity;
+        data->capacity = pdg->PartitionEntry[i].PartitionLength.QuadPart;
+        data->is_mounted = false;
+        data->offset = pdg->PartitionEntry[i].StartingOffset;
+        data->length = pdg->PartitionEntry[i].PartitionLength;
+        data->free_space = data->capacity;
 
-        table.push_back(data);
+        result.push_back(data);
     }
+
+    return result;
 }
 
 BOOL GetDriveGeometry(LPWSTR wszPath, DISK_GEOMETRY *pdg)
@@ -64,7 +72,7 @@ BOOL GetDriveGeometry(LPWSTR wszPath, DISK_GEOMETRY *pdg)
     return (bResult);
 }
 
-QStringList getPhysicalDisks(const QStringList &drivesList)
+QStringList getPhysicalDisks()
 {
     QStringList result;
     char physical[65536];
@@ -113,12 +121,138 @@ QStringList getDrivesList()
     return drivesList;
 }
 
+//возвращает информацию о том, какие логические тома (C:\\,D:\\) куда примонтированы
+//- на какие физические диски и на какие разделы
+//после чего заменяет названия у соответствующих разделов на название логических томов
+void getAllExtents(PartitionTable &table)
+{
+    /*
+    //получаем список всех примонтированных томов в системе
+    auto drivesList = getDrivesList();
+
+    for (QString drive : drivesList)
+    {
+        HANDLE hDevice;               // handle to the drive to be examined
+
+        VOLUME_DISK_EXTENTS *pdg;
+        char tmpbuf[2048];
+        DWORD lpBytesReturned;
+        BOOL bResult = 1;
+
+        auto str = drive.toStdWString();
+        str += L'\0';
+
+        hDevice = CreateFileW(str.c_str(),          // drive to open
+                              0,                // no access to the drive
+                              FILE_SHARE_READ | // share mode
+                              FILE_SHARE_WRITE,
+                              NULL,             // default security attributes
+                              OPEN_EXISTING,    // disposition
+                              0,                // file attributes
+                              NULL);
+
+        //даем команду на получение информации о разделах данного диска
+        bResult = DeviceIoControl(
+                    (HANDLE) hDevice,                        // device to be queried
+                    IOCTL_VOLUME_GET_VOLUME_DISK_EXTENTS,  // operation to perform
+                    NULL,
+                    0,
+                    &tmpbuf,
+                    sizeof(tmpbuf),
+                    &lpBytesReturned,
+                    NULL
+                    );
+
+        if (!bResult)
+        {
+            //проверяем, какая возникла ошибка
+            DWORD error = GetLastError();
+            if (error == ERROR_MORE_DATA)
+            {
+                //нормальние поведение, если в структуре есть больше чем одна запись
+                //секторов
+                //логический том занимает несколько разделов
+                //выделяем память под структуру
+                pdg = (VOLUME_DISK_EXTENTS*)malloc(lpBytesReturned);
+                //копируем содержимое буфера в структуру
+                memcpy(pdg, tmpbuf, lpBytesReturned);
+
+                for (auto i = 0; i < pdg->NumberOfDiskExtents; i++)
+                {
+                    //парсим структуру
+                    //ищем раздел на нужном диске с данным смещением и длиной
+                    auto it = std::find_if(table.begin(),table.end(),[&i,pdg](PartitionData data)
+                    {
+                            //номер диска должен совпадать
+                            if (data.disk_number != pdg->Extents[i].DiskNumber)
+                            return false;
+                            //начальное смещение должно совпадать
+                            if (data.offset.QuadPart != pdg->Extents[i].StartingOffset.QuadPart)
+                            return false;
+                            //длина должна совпадать
+                            if (data.length.QuadPart != pdg->Extents[i].ExtentLength.QuadPart)
+                            return false;
+
+                            return true;
+                });
+                    //нашли нужный нам раздел
+                    //меняем его название на имя логического тома
+                    if (it != table.end())
+                        (*it)->partitionName = drive;
+                }
+
+                //удаляем структуру
+                free(pdg);
+            }
+            else
+                //кидаем исключение, поскольку не смогли получить информацию о разделах
+                throw std::runtime_error("error when obraining volume mount data"+
+                                         std::to_string(error));
+        }
+        {
+            //вернули всего один диапазон секторов
+            //значит, логический том занимает один раздел
+
+            //выделяем память под структуру
+            pdg = (VOLUME_DISK_EXTENTS*)malloc(lpBytesReturned);
+            //копируем содержимое буфера в структуру
+            memcpy(pdg, tmpbuf, lpBytesReturned);
+
+            //парсим структуру
+            //ищем раздел на нужном диске с данным смещением и длиной
+            auto it = std::find_if(table.begin(),table.end(),[pdg](PartitionData data)
+            {
+                //номер диска должен совпадать
+                if (data.disk_number != pdg->Extents[0].DiskNumber)
+                    return false;
+                //начальное смещение должно совпадать
+                if (data.offset.QuadPart != pdg->Extents[0].StartingOffset.QuadPart)
+                    return false;
+                //длина должна совпадать
+                if (data.length.QuadPart != pdg->Extents[0].ExtentLength.QuadPart)
+                    return false;
+
+                return true;
+            });
+            //нашли нужный нам раздел
+            //меняем его название на имя логического тома
+            if (it != table.end())
+                (*it)->partitionName = drive;
+
+            //удаляем структуру
+            free(pdg);
+        }
+
+        //закрываем устройство
+        CloseHandle(hDevice);
+    }*/
+}
+
 PartitionTable getAllPartitions()
 {
     PartitionTable result;
 
-    auto drivesList = getDrivesList();
-    auto physDisks = getPhysicalDisks(drivesList);
+    auto physDisks = getPhysicalDisks();
     //для каждого диска получаем информацию о разделах
 
     for (QString x : physDisks)
@@ -158,9 +292,9 @@ PartitionTable getAllPartitions()
         {
             //проверяем, какая возникла ошибка
             DWORD error = GetLastError();
-            cout << "error occured while getting partition data: " << error << endl;
-            //завершаем программу, поскольку не смогли получить информацию о разделах
-            //return 0;
+            //кидаем исключение
+            throw std::runtime_error("error occurend while getting layout: "+
+                                     std::to_string(error));
         }
 
         //выделяем память под структуру
@@ -170,7 +304,8 @@ PartitionTable getAllPartitions()
 
         //парсим структуру
         //добавляем новые записи в результирующий массив
-        parseDriveLayout(*pdg, x, result);
+        auto newTableData = parseDriveLayout(pdg, x);
+        result.insert(std::end(result), std::begin(newTableData), std::end(newTableData));
 
         //удаляем структуру
         free(pdg);
@@ -179,6 +314,8 @@ PartitionTable getAllPartitions()
         CloseHandle(hDevice);
 
     }
+
+    getAllExtents(result);
 
     return result;
 }
