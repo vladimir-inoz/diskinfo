@@ -126,7 +126,6 @@ QStringList getDrivesList()
 //после чего заменяет названия у соответствующих разделов на название логических томов
 void getAllExtents(PartitionTable &table)
 {
-    /*
     //получаем список всех примонтированных томов в системе
     auto drivesList = getDrivesList();
 
@@ -181,16 +180,16 @@ void getAllExtents(PartitionTable &table)
                 {
                     //парсим структуру
                     //ищем раздел на нужном диске с данным смещением и длиной
-                    auto it = std::find_if(table.begin(),table.end(),[&i,pdg](PartitionData data)
+                    auto it = std::find_if(table.begin(),table.end(),[&i,pdg](std::shared_ptr<PartitionData> data)
                     {
                             //номер диска должен совпадать
-                            if (data.disk_number != pdg->Extents[i].DiskNumber)
+                            if (data->disk_number != pdg->Extents[i].DiskNumber)
                             return false;
                             //начальное смещение должно совпадать
-                            if (data.offset.QuadPart != pdg->Extents[i].StartingOffset.QuadPart)
+                            if (data->offset.QuadPart != pdg->Extents[i].StartingOffset.QuadPart)
                             return false;
                             //длина должна совпадать
-                            if (data.length.QuadPart != pdg->Extents[i].ExtentLength.QuadPart)
+                            if (data->length.QuadPart != pdg->Extents[i].ExtentLength.QuadPart)
                             return false;
 
                             return true;
@@ -220,16 +219,16 @@ void getAllExtents(PartitionTable &table)
 
             //парсим структуру
             //ищем раздел на нужном диске с данным смещением и длиной
-            auto it = std::find_if(table.begin(),table.end(),[pdg](PartitionData data)
+            auto it = std::find_if(table.begin(),table.end(),[pdg](std::shared_ptr<PartitionData> data)
             {
                 //номер диска должен совпадать
-                if (data.disk_number != pdg->Extents[0].DiskNumber)
+                if (data->disk_number != pdg->Extents[0].DiskNumber)
                     return false;
                 //начальное смещение должно совпадать
-                if (data.offset.QuadPart != pdg->Extents[0].StartingOffset.QuadPart)
+                if (data->offset.QuadPart != pdg->Extents[0].StartingOffset.QuadPart)
                     return false;
                 //длина должна совпадать
-                if (data.length.QuadPart != pdg->Extents[0].ExtentLength.QuadPart)
+                if (data->length.QuadPart != pdg->Extents[0].ExtentLength.QuadPart)
                     return false;
 
                 return true;
@@ -245,7 +244,7 @@ void getAllExtents(PartitionTable &table)
 
         //закрываем устройство
         CloseHandle(hDevice);
-    }*/
+    }
 }
 
 PartitionTable getAllPartitions()
