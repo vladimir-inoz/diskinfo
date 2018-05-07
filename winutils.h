@@ -10,8 +10,7 @@
 //возвращение строки с размером файла в читаемом формате
 QString humanSize(double size);
 
-struct PartitionData;
-
+//данные о физическом диске
 struct DiskData
 {
     unsigned int index;
@@ -23,7 +22,7 @@ struct DiskData
     double size;
 };
 
-//информация о разделах для отображения
+//данные о разделах физического диска
 struct PartitionData
 {
     //информация для отображения в модели
@@ -31,15 +30,12 @@ struct PartitionData
 
     QString location;
     QString type;
-    QString fs_type; //тип файловой системы
+    QString FSType; //тип файловой системы
     QString state;
-    double capacity; //объем
-    double free_space; //свободное место
+    double size; //объем
+    double freeSpace; //свободное место
 
-    //служебная информация
-    bool is_mounted;
-    LARGE_INTEGER offset; //начало
-    LARGE_INTEGER length; //длина
+    long long length; //длина
 
     QString internalPartitionName;
 

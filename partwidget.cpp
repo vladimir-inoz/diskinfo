@@ -27,7 +27,7 @@ void PartWidget::updateView()
     {
         auto disk = diskit.second;
 
-        QHBoxLayout *hLayout = new QHBoxLayout(this);
+        QHBoxLayout *hLayout = new QHBoxLayout();
         hLayout->setMargin(0);
 
         //добавляем начальную кнопку
@@ -46,12 +46,12 @@ void PartWidget::updateView()
         {
             if (partition->parentDisk->name == disk->name)
             {
-                QPushButton *button = new QPushButton(partition->partitionName+"\n"+humanSize(partition->capacity)+"\n"+partition->state);
+                QPushButton *button = new QPushButton(partition->partitionName+"\n"+humanSize(partition->size)+"\n"+partition->state);
                 button->setCheckable(true);
                 button->setMinimumWidth(20);
                 button->setMaximumHeight(50);
                 QSizePolicy sp(QSizePolicy::Minimum, QSizePolicy::Fixed);
-                if (partition->capacity > 1024*1024*512)
+                if (partition->size > 1024*1024*512)
                     sp.setHorizontalStretch(2);
                 else
                     sp.setHorizontalStretch(1);

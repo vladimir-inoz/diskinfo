@@ -18,12 +18,6 @@ QString humanSize(double size) {
     return result;
 }
 
-QString humanSize(char *text)
-{
-    double sz = QString(text).toDouble();
-    return humanSize(sz);
-}
-
 static LPWSTR getWmiStr(LPCWSTR szComputer)
 {
     static WCHAR szWmiStr[256];
@@ -96,69 +90,25 @@ PartitionTable getAllPartitions()
         {
             std::shared_ptr<PartitionData> pdata = std::make_shared<PartitionData>();
 
-            CDhStringA test;
+            CDhStringA partName, devID, size, description;
 
-            dhGetValue(L"%s", &test, wmiResSvc, L".Name");
-            cout << "Name: "     << test << endl;
-            pdata->partitionName = QString::fromLocal8Bit(test);
+            dhGetValue(L"%s", &partName, wmiResSvc, L".Name");
+            pdata->partitionName = QString::fromLocal8Bit(partName);
 
             //объем
-            dhGetValue(L"%s", &test, wmiResSvc, L".Size");
-            cout << "Size: "     << test << endl;
-            pdata->capacity = QString(test).toDouble();
+            dhGetValue(L"%s", &size, wmiResSvc, L".Size");
+            pdata->size = QString(size).toDouble();
             //пока не нашли примонтированный диск,
             //считаем, что свободно 100% раздела
-            pdata->free_space = pdata->capacity;
+            pdata->freeSpace = pdata->size;
 
-            dhGetValue(L"%s", &test, wmiResSvc, L".SystemName");
-            cout << "SystemName: "     << test << endl;
+            dhGetValue(L"%s", &devID, wmiResSvc, L".DeviceID");
+            pdata->internalPartitionName = QString::fromLocal8Bit(devID);
 
-            dhGetValue(L"%s", &test, wmiResSvc, L".Caption");
-            cout << "Caption: "     << test << endl;
-
-            dhGetValue(L"%s", &test, wmiResSvc, L".DeviceID");
-            cout << "DeviceID: "     << test << endl;
-            pdata->internalPartitionName = QString::fromLocal8Bit(test);
-
-            dhGetValue(L"%s", &test, wmiResSvc, L".Description");
-            cout << "Description: "     << test << endl;
-            pdata->state = QString::fromLocal8Bit(test);
-
-            dhGetValue(L"%s", &test, wmiResSvc, L".Type");
-            cout << "Type: "     << test << endl;
-
-            dhGetValue(L"%s", &test, wmiResSvc, L".Bootable");
-            cout << "Bootable: "     << test << endl;
-
-            dhGetValue(L"%s", &test, wmiResSvc, L".BootPartition");
-            cout << "BootPartition: "     << test << endl;
-
-            dhGetValue(L"%s", &test, wmiResSvc, L".DiskIndex");
-            cout << "DiskIndex: "     << test << endl;
-            //pdata->disk_number = QString(test).toInt();
-
-            dhGetValue(L"%s", &test, wmiResSvc, L".Index");
-            cout << "Index: "     << test << endl;
-
-            dhGetValue(L"%s", &test, wmiResSvc, L".StartingOffset");
-            cout << "StartingOffset: "     << test << endl;
-            pdata->offset.QuadPart = QString(test).toDouble();
-
-            //узнаем Health status
-            //узнаем, к какому физическому диску относится раздел
-            CDispPtr tmp;
-            dhCheck(dhGetValue(L"%o", &tmp, wmiSvc, L".ExecQuery(%S)",
-                               L"SELECT * FROM Win32_DiskDriveToDiskPartition"));
-            FOR_EACH(tmp, tmp, NULL)
-            {
-                dhGetValue(L"%s", &test, wmiResSvc, L".StartingOffset");
-                cout << "StartingOffset: "     << test << endl;
-            } NEXT_THROW(tmp);
+            dhGetValue(L"%s", &description, wmiResSvc, L".Description");
+            pdata->state = QString::fromLocal8Bit(description);
 
             result.push_back(pdata);
-
-
-            cout << endl;
         } NEXT_THROW(wmiResSvc);
 
     }
@@ -208,6 +158,8 @@ PartitionTable getAllPartitions()
         FOR_EACH(wmiResSvc, wmiResSvc, NULL)
         {
 
+            //для каждого логического диска из запроса ищем соответствующий ему раздел
+            //на диске
             CDhStringA test;
 
             dhGetValue(L"%s", &test, wmiResSvc, L".Caption");
@@ -230,10 +182,10 @@ PartitionTable getAllPartitions()
                 pdata->partitionName = volumeName + "(" +logicalDriveCaption + ")";
 
                 dhGetValue(L"%s", &test, wmiResSvc, L".FileSystem");
-                pdata->fs_type = QString::fromLocal8Bit(test);
+                pdata->FSType = QString::fromLocal8Bit(test);
 
                 dhGetValue(L"%s", &test, wmiResSvc, L".FreeSpace");
-                pdata->free_space = QString(test).toDouble();
+                pdata->freeSpace = QString(test).toDouble();
             }
 
         } NEXT_THROW(wmiResSvc);

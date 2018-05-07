@@ -14,7 +14,6 @@ MainWindow::MainWindow(QWidget *parent) :
     model.updateData();
     ui->widget->setData(table);
 
-    //ui->tableView->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
     ui->tableView->verticalHeader()->setSectionResizeMode(QHeaderView::Fixed);
     ui->tableView->verticalHeader()->setDefaultSectionSize(24);
     ui->tableView->resizeColumnsToContents();
