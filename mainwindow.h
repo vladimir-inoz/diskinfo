@@ -15,10 +15,12 @@ class MainWindow : public QMainWindow
 public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
-
+public slots:
+    void selectRowWithPartition(const QString &partName);
 private:
     Ui::MainWindow *ui;
     PartitionsTableModel model;
+    PartitionTable table;
 };
 
 #endif // MAINWINDOW_H

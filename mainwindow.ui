@@ -7,15 +7,15 @@
     <x>0</x>
     <y>0</y>
     <width>400</width>
-    <height>300</height>
+    <height>410</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>MainWindow</string>
   </property>
   <widget class="QWidget" name="centralWidget">
-   <layout class="QGridLayout" name="gridLayout">
-    <item row="0" column="0">
+   <layout class="QVBoxLayout" name="verticalLayout">
+    <item>
      <widget class="QTableView" name="tableView">
       <property name="editTriggers">
        <set>QAbstractItemView::NoEditTriggers</set>
@@ -29,6 +29,19 @@
       <attribute name="verticalHeaderVisible">
        <bool>false</bool>
       </attribute>
+     </widget>
+    </item>
+    <item>
+     <widget class="PartWidget" name="widget" native="true">
+      <property name="minimumSize">
+       <size>
+        <width>0</width>
+        <height>200</height>
+       </size>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">border: rgb(0, 0, 0)</string>
+      </property>
      </widget>
     </item>
    </layout>
@@ -54,6 +67,14 @@
   <widget class="QStatusBar" name="statusBar"/>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
+ <customwidgets>
+  <customwidget>
+   <class>PartWidget</class>
+   <extends>QWidget</extends>
+   <header>partwidget.h</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>

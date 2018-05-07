@@ -94,6 +94,7 @@ PartitionTable getAllPartitions()
 
             dhGetValue(L"%s", &test, wmiResSvc, L".DiskIndex");
             cout << "DiskIndex: "     << test << endl;
+            pdata->disk_number = QString(test).toInt();
 
             dhGetValue(L"%s", &test, wmiResSvc, L".Index");
             cout << "Index: "     << test << endl;

@@ -28,13 +28,15 @@ SOURCES += \
         mainwindow.cpp \
     partitionstablemodel.cpp \
     winutils.cpp \
-    disphelper.c
+    disphelper.c \
+    partwidget.cpp
 
 HEADERS += \
         mainwindow.h \
     winutils.h \
     partitionstablemodel.h \
-    disphelper.h
+    disphelper.h \
+    partwidget.h
 
 FORMS += \
         mainwindow.ui
