@@ -10,6 +10,7 @@
 //возвращение строки с размером файла в читаемом формате
 QString humanSize(double size);
 
+
 //информация о разделах для отображения
 struct PartitionData
 {

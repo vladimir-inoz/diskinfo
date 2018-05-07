@@ -14,8 +14,16 @@ MainWindow::MainWindow(QWidget *parent) :
     model.updateData();
     ui->widget->setData(table);
 
+    ui->tableView->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+
     QObject::connect(ui->widget, &PartWidget::partitionSelected,
                      this, &MainWindow::selectRowWithPartition);
+    QObject::connect(ui->tableView, &QAbstractItemView::activated,
+                     [this] (const QModelIndex &index)
+    {
+        QString str = table[index.row()]->partitionName;
+        ui->widget->selectPartition(str);
+    });
 }
 
 MainWindow::~MainWindow()

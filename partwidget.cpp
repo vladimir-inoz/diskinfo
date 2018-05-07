@@ -7,6 +7,7 @@
 PartWidget::PartWidget(QWidget *parent) : QFrame(parent)
 {
     m_layout = new QVBoxLayout(this);
+    m_layout->setMargin(1);
     setLayout(m_layout);
 }
 
@@ -28,20 +29,32 @@ void PartWidget::updateView()
     for (int i = 0; i < ndisks; i++)
     {
         QHBoxLayout *hLayout = new QHBoxLayout(this);
+        hLayout->setMargin(0);
 
-        //добавляем куски в диск
+        //добавляем начальную кнопку
+        QPushButton *startButton = new QPushButton("Диск "+QString::number(i));
+        QSizePolicy sp(QSizePolicy::Preferred, QSizePolicy::Fixed);
+        startButton->setMinimumWidth(20);
+        startButton->setMaximumHeight(50);
+        startButton->setSizePolicy(sp);
+        startButton->setCheckable(true);
+        hLayout->addWidget(startButton);
+
+        //добавляем виджеты разделов диска
         for (auto partition : m_data)
         {
             if (partition->disk_number == i)
             {
                 QPushButton *button = new QPushButton(partition->partitionName+"\n"+humanSize(partition->capacity)+"\n"+partition->state);
                 button->setCheckable(true);
-                /*QSizePolicy sp(QSizePolicy::Preferred, QSizePolicy::Preferred);
+                button->setMinimumWidth(20);
+                button->setMaximumHeight(50);
+                QSizePolicy sp(QSizePolicy::Minimum, QSizePolicy::Fixed);
                 if (partition->capacity > 1024*1024*512)
                     sp.setHorizontalStretch(2);
                 else
                     sp.setHorizontalStretch(1);
-                button->setSizePolicy(sp);*/
+                button->setSizePolicy(sp);
                 hLayout->addWidget(button);
                 partGroup->addButton(button);
 
@@ -50,9 +63,19 @@ void PartWidget::updateView()
                 {
                    emit partitionSelected(partition->partitionName);
                 });
+                QObject::connect(this, &PartWidget::selectPartitionButton, [this, button](QString name)
+                {
+                    if (button->text().contains(name))
+                        button->setChecked(true);
+                });
             }
         }
 
         m_layout->addLayout(hLayout);
     }
+}
+
+void PartWidget::selectPartition(QString partName)
+{
+    emit selectPartitionButton(partName);
 }
