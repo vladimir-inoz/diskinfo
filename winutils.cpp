@@ -81,6 +81,7 @@ PartitionTable getAllPartitions()
 
             dhGetValue(L"%s", &test, wmiResSvc, L".Description");
             cout << "Description: "     << test << endl;
+            pdata->state = QString::fromLocal8Bit(test);
 
             dhGetValue(L"%s", &test, wmiResSvc, L".Type");
             cout << "Type: "     << test << endl;
@@ -200,6 +201,81 @@ PartitionTable getAllPartitions()
     {
         cerr << "Fatal error details:" << endl << errstr << endl;
     }
+
+    //делаем запрос состояния S.M.A.R.T физических дисков
+    std::map<QString,QString> SMARTStatus;
+    try
+    {
+        CDispPtr wmiSvc, wmiResSvc;
+        dhCheck( dhGetObject(getWmiStr(L"."), NULL, &wmiSvc) );
+
+        WCHAR szWmiQuery[MAX_PATH+256] = L"SELECT * FROM Win32_DiskDrive";
+        dhCheck(dhGetValue(L"%o", &wmiResSvc, wmiSvc, L".ExecQuery(%S)", szWmiQuery));
+
+        FOR_EACH(wmiResSvc, wmiResSvc, NULL)
+        {
+
+            CDhStringA status, name;
+
+            dhGetValue(L"%s", &status, wmiResSvc, L".Status");
+            QString statusStr = QString::fromLocal8Bit(status);
+            dhGetValue(L"%s", &name, wmiResSvc, L".Name");
+            QString nameStr = QString::fromLocal8Bit(name).remove("\\").remove(".");
+
+            SMARTStatus[nameStr] = statusStr;
+        } NEXT_THROW(wmiResSvc);
+
+    }
+    catch (string errstr)
+    {
+        cerr << "Fatal error details:" << endl << errstr << endl;
+    }
+
+    //связь дисков и разделов
+    std::map<QString, QString> diskDriveToDiskPartitions;
+    try
+    {
+        CDispPtr wmiSvc, wmiResSvc;
+        dhCheck( dhGetObject(getWmiStr(L"."), NULL, &wmiSvc) );
+
+        WCHAR szWmiQuery[MAX_PATH+256] = L"SELECT * FROM Win32_DiskDriveToDiskPartition";
+        dhCheck(dhGetValue(L"%o", &wmiResSvc, wmiSvc, L".ExecQuery(%S)", szWmiQuery));
+
+        FOR_EACH(wmiResSvc, wmiResSvc, NULL)
+        {
+
+            CDhStringA ant, dep;
+
+            dhGetValue(L"%s", &ant, wmiResSvc, L".Antecedent");
+            QString antStr = QString::fromLocal8Bit(ant).section('=',1).remove("\"").remove(".").remove("\\");
+            dhGetValue(L"%s", &dep, wmiResSvc, L".Dependent");
+            QString depStr = QString::fromLocal8Bit(dep).section('=',1).remove("\"");
+
+            diskDriveToDiskPartitions[depStr] = antStr;
+        } NEXT_THROW(wmiResSvc);
+
+    }
+    catch (string errstr)
+    {
+        cerr << "Fatal error details:" << endl << errstr << endl;
+    }
+
+    //добавляем информацию о состоянии диска в записи разделов
+    for (auto dd : diskDriveToDiskPartitions)
+    {
+        auto it = std::find_if(result.begin(), result.end(),
+                               [dd](std::shared_ptr<PartitionData> pdata)
+        {return (pdata->internalPartitionName == dd.first);});
+        if (it != result.end())
+        {
+            //нашли раздел, соответствующий логическому диску!
+            //обновляем его информацию
+            std::shared_ptr<PartitionData> &pdata = *it;
+
+            pdata->state = SMARTStatus[dd.second] + " (" + pdata->state + ")";
+        }
+    }
+
 
     return result;
 }
