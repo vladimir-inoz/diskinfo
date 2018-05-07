@@ -38,6 +38,47 @@ static LPWSTR getWmiStr(LPCWSTR szComputer)
     return szWmiStr;
 }
 
+
+Win32_DiskDrive getDisks()
+{
+    Win32_DiskDrive result;
+    try
+    {
+        CDispPtr wmiSvc, wmiResSvc;
+        dhCheck( dhGetObject(getWmiStr(L"."), NULL, &wmiSvc) );
+
+        WCHAR szWmiQuery[MAX_PATH+256] = L"SELECT * FROM Win32_DiskDrive";
+        dhCheck(dhGetValue(L"%o", &wmiResSvc, wmiSvc, L".ExecQuery(%S)", szWmiQuery));
+
+        FOR_EACH(wmiResSvc, wmiResSvc, NULL)
+        {
+            std::shared_ptr<DiskData> diskData = std::make_shared<DiskData>();
+
+            CDhStringA status, name, mediaType, sz, idx;
+
+            dhGetValue(L"%s", &status, wmiResSvc, L".Status");
+            diskData->status = QString::fromLocal8Bit(status);
+            dhGetValue(L"%s", &name, wmiResSvc, L".Name");
+            diskData->name = QString::fromLocal8Bit(name).remove("\\").remove(".");
+            dhGetValue(L"%s", &mediaType, wmiResSvc, L".MediaType");
+            diskData->mediaType = QString::fromLocal8Bit(mediaType);
+            dhGetValue(L"%s", &sz, wmiResSvc, L".Size");
+            diskData->size = QString(sz).toDouble();
+            dhGetValue(L"%s", &idx, wmiResSvc, L".Index");
+            diskData->index = QString(idx).toLong();
+
+            result[diskData->name] = diskData;
+        } NEXT_THROW(wmiResSvc);
+
+    }
+    catch (string errstr)
+    {
+        cerr << "Fatal error details:" << endl << errstr << endl;
+    }
+
+    return result;
+}
+
 PartitionTable getAllPartitions()
 {
     PartitionTable result;
@@ -94,7 +135,7 @@ PartitionTable getAllPartitions()
 
             dhGetValue(L"%s", &test, wmiResSvc, L".DiskIndex");
             cout << "DiskIndex: "     << test << endl;
-            pdata->disk_number = QString(test).toInt();
+            //pdata->disk_number = QString(test).toInt();
 
             dhGetValue(L"%s", &test, wmiResSvc, L".Index");
             cout << "Index: "     << test << endl;
@@ -203,34 +244,8 @@ PartitionTable getAllPartitions()
         cerr << "Fatal error details:" << endl << errstr << endl;
     }
 
-    //делаем запрос состояния S.M.A.R.T физических дисков
-    std::map<QString,QString> SMARTStatus;
-    try
-    {
-        CDispPtr wmiSvc, wmiResSvc;
-        dhCheck( dhGetObject(getWmiStr(L"."), NULL, &wmiSvc) );
-
-        WCHAR szWmiQuery[MAX_PATH+256] = L"SELECT * FROM Win32_DiskDrive";
-        dhCheck(dhGetValue(L"%o", &wmiResSvc, wmiSvc, L".ExecQuery(%S)", szWmiQuery));
-
-        FOR_EACH(wmiResSvc, wmiResSvc, NULL)
-        {
-
-            CDhStringA status, name;
-
-            dhGetValue(L"%s", &status, wmiResSvc, L".Status");
-            QString statusStr = QString::fromLocal8Bit(status);
-            dhGetValue(L"%s", &name, wmiResSvc, L".Name");
-            QString nameStr = QString::fromLocal8Bit(name).remove("\\").remove(".");
-
-            SMARTStatus[nameStr] = statusStr;
-        } NEXT_THROW(wmiResSvc);
-
-    }
-    catch (string errstr)
-    {
-        cerr << "Fatal error details:" << endl << errstr << endl;
-    }
+    //делаем запрос физических дисков
+    std::map<QString, std::shared_ptr<DiskData>> disks = getDisks();
 
     //связь дисков и разделов
     std::map<QString, QString> diskDriveToDiskPartitions;
@@ -261,20 +276,16 @@ PartitionTable getAllPartitions()
         cerr << "Fatal error details:" << endl << errstr << endl;
     }
 
-    //добавляем информацию о состоянии диска в записи разделов
-    for (auto dd : diskDriveToDiskPartitions)
+    //сопоставляем физические диски и разделы
+    for (auto partition : result)
     {
-        auto it = std::find_if(result.begin(), result.end(),
-                               [dd](std::shared_ptr<PartitionData> pdata)
-        {return (pdata->internalPartitionName == dd.first);});
-        if (it != result.end())
-        {
-            //нашли раздел, соответствующий логическому диску!
-            //обновляем его информацию
-            std::shared_ptr<PartitionData> &pdata = *it;
+        partition->parentDisk = disks[diskDriveToDiskPartitions[partition->internalPartitionName]];
+    }
 
-            pdata->state = SMARTStatus[dd.second] + " (" + pdata->state + ")";
-        }
+    //добавляем информацию о состоянии диска в записи разделов
+    for (auto partition : result)
+    {
+        partition->state = partition->parentDisk->status +  " (" + partition->state + ")";
     }
 
 

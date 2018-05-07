@@ -16,25 +16,26 @@ void PartWidget::updateView()
     setStyleSheet(tr("QPushButton:checked {background:red};"));
 
     //считаем количество дисков
-    int ndisks = 0;
-    std::for_each(m_data.cbegin(), m_data.cend(), [&ndisks](const std::shared_ptr<PartitionData> &pdata)
-    {if (pdata->disk_number > ndisks) ndisks = pdata->disk_number;});
-    ndisks++;
+    auto disks = getDisks();
 
     //динамически добавляем виджеты с дисками
-
     QButtonGroup *partGroup = new QButtonGroup(this);
     partGroup->setExclusive(true);
 
-    for (int i = 0; i < ndisks; i++)
+    //для каждого диска строим строку с разделами из виджетов
+    for (auto diskit : disks)
     {
+        auto disk = diskit.second;
+
         QHBoxLayout *hLayout = new QHBoxLayout(this);
         hLayout->setMargin(0);
 
         //добавляем начальную кнопку
-        QPushButton *startButton = new QPushButton("Диск "+QString::number(i));
-        QSizePolicy sp(QSizePolicy::Preferred, QSizePolicy::Fixed);
-        startButton->setMinimumWidth(20);
+        QPushButton *startButton = new QPushButton("Диск "+QString::number(disk->index)
+                                                   + "\n" + disk->mediaType + "\n" + humanSize(disk->size));
+        QSizePolicy sp(QSizePolicy::Fixed, QSizePolicy::Fixed);
+        startButton->setMaximumWidth(100);
+        startButton->setMinimumWidth(100);
         startButton->setMaximumHeight(50);
         startButton->setSizePolicy(sp);
         startButton->setCheckable(true);
@@ -43,7 +44,7 @@ void PartWidget::updateView()
         //добавляем виджеты разделов диска
         for (auto partition : m_data)
         {
-            if (partition->disk_number == i)
+            if (partition->parentDisk->name == disk->name)
             {
                 QPushButton *button = new QPushButton(partition->partitionName+"\n"+humanSize(partition->capacity)+"\n"+partition->state);
                 button->setCheckable(true);

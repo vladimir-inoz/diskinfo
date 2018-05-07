@@ -10,6 +10,18 @@
 //возвращение строки с размером файла в читаемом формате
 QString humanSize(double size);
 
+struct PartitionData;
+
+struct DiskData
+{
+    unsigned int index;
+    QString status;
+    QString name;
+    //съемный или несъемный диск
+    QString mediaType;
+    //объем диска
+    double size;
+};
 
 //информация о разделах для отображения
 struct PartitionData
@@ -26,16 +38,21 @@ struct PartitionData
 
     //служебная информация
     bool is_mounted;
-    DWORD disk_number; //номер физического диска, на котором расположен раздел
     LARGE_INTEGER offset; //начало
     LARGE_INTEGER length; //длина
 
     QString internalPartitionName;
+
+    //информация о диске, на котором расположен раздел
+    std::shared_ptr<DiskData> parentDisk;
 };
 
 using PartitionTable = std::vector<std::shared_ptr<PartitionData>>;
 
 //получение информации о всех разделах
 PartitionTable getAllPartitions();
+using Win32_DiskDrive = std::map<QString, std::shared_ptr<DiskData>>;
+//получение информации о дисках
+Win32_DiskDrive getDisks();
 
 #endif // WINUTILS_H
