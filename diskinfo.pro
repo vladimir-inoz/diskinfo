@@ -27,12 +27,16 @@ SOURCES += \
         main.cpp \
         mainwindow.cpp \
     partitionstablemodel.cpp \
-    winutils.cpp
+    winutils.cpp \
+    disphelper.c
 
 HEADERS += \
         mainwindow.h \
     winutils.h \
-    partitionstablemodel.h
+    partitionstablemodel.h \
+    disphelper.h
 
 FORMS += \
         mainwindow.ui
+
+win32:LIBS += -lole32 -loleaut32 -luuid

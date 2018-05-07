@@ -24,8 +24,8 @@ QVariant PartitionsTableModel::data(const QModelIndex &index, int role) const
         {
         case 0 : return data.partitionName;
         case 1 : return data.location;
-        case 2 : return data.fs_type;
-        case 3 : return data.type;
+        case 2 : return data.type;
+        case 3 : return data.fs_type;
         case 4 : return data.state;
         case 5 : return humanSize(data.capacity);
         case 6 : return humanSize(data.free_space);
