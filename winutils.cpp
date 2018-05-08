@@ -97,7 +97,7 @@ PartitionTable getAllPartitions()
 
             //объем
             dhGetValue(L"%s", &size, wmiResSvc, L".Size");
-            pdata->size = QString(size).toDouble();
+            pdata->size = QString(size).toLongLong();
             //пока не нашли примонтированный диск,
             //считаем, что свободно 100% раздела
             pdata->freeSpace = pdata->size;

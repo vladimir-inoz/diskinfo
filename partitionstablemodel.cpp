@@ -27,7 +27,7 @@ QVariant PartitionsTableModel::data(const QModelIndex &index, int role) const
         case 2 : return data->state;
         case 3 : return humanSize(data->size);
         case 4 : return humanSize(data->freeSpace);
-        case 5 : return QString::number((int)(data->freeSpace / data->size * 100)) + " %";
+        case 5 : return QString::number((double)(data->freeSpace) / (double)(data->size) * 100.0, 'f', 1) + " %";
         }
         return QVariant();
     }
