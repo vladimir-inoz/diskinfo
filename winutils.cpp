@@ -163,7 +163,7 @@ PartitionTable getAllPartitions()
             CDhStringA test;
 
             dhGetValue(L"%s", &test, wmiResSvc, L".Caption");
-            cout << "Caption: " << test << endl;
+
             //название логического тома
             QString logicalDriveCaption = QString::fromLocal8Bit(test);
             QString logicalDrivePartition = logicalDiskToPartition[logicalDriveCaption];

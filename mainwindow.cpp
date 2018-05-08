@@ -33,6 +33,7 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
+//выбираем ряд в таблице по названию раздела
 void MainWindow::selectRowWithPartition(const QString &partName)
 {
     auto it = std::find_if(table.cbegin(), table.cend(), [&partName] (std::shared_ptr<PartitionData> x)

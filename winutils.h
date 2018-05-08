@@ -35,15 +35,14 @@ struct PartitionData
     double size; //объем
     double freeSpace; //свободное место
 
-    long long length; //длина
-
     QString internalPartitionName;
 
     //информация о диске, на котором расположен раздел
     std::shared_ptr<DiskData> parentDisk;
 };
 
-using PartitionTable = std::vector<std::shared_ptr<PartitionData>>;
+using PartitionDataPtr = std::shared_ptr<PartitionData>;
+using PartitionTable = std::vector<PartitionDataPtr>;
 
 //получение информации о всех разделах
 PartitionTable getAllPartitions();
