@@ -93,8 +93,8 @@ void PartWidget::updateView()
                 });
             }
         }
-        //добавляем неразмеченную область
-        if (sumPartSize < disk->size)
+        //добавляем неразмеченную область (больше 256 МБ)
+        if (disk->size - sumPartSize > 1024*1024*256)
         {
             QVBoxLayout *partLayout = new QVBoxLayout();
             partLayout->setSpacing(0);
