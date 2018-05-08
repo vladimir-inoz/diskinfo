@@ -9,13 +9,12 @@ PartWidget::PartWidget(QWidget *parent) : QFrame(parent)
     m_layout = new QVBoxLayout(this);
     m_layout->setMargin(1);
     setLayout(m_layout);
-
-    setStyleSheet(tr("QPushButton:checked {background:red};"));
 }
 
 void PartWidget::updateView()
 {
-    //считаем количество дисков
+    setStyleSheet(tr("QPushButton:checked {background:red}"));
+    //делаем запрос дисков
     auto disks = getDisks();
 
     //динамически добавляем виджеты с дисками
@@ -42,7 +41,7 @@ void PartWidget::updateView()
         hLayout->addWidget(startButton);
 
         //суммарный размер разделов
-        double sumPartSize = 0.0;
+        long long sumPartSize = 0;
 
         //добавляем виджеты разделов диска
         for (auto partition : m_data)
@@ -56,13 +55,18 @@ void PartWidget::updateView()
 
                 QSizePolicy sp(QSizePolicy::Minimum, QSizePolicy::Fixed);
 
+                //синяя шапка сверху
                 QWidget *widget = new QWidget();
                 widget->setStyleSheet("background: blue");
                 widget->setMinimumHeight(10);
                 widget->setSizePolicy(sp);
                 partLayout->addWidget(widget);
 
-                QPushButton *button = new QPushButton(partition->partitionName+"\n"+humanSize(partition->size)+"\n"+partition->state);
+                //снизу - кнопка с названием раздела
+                QPushButton *button = new QPushButton(
+                            partition->partitionName+"\n"+humanSize(partition->size)+"\n"+
+                            partition->parentDisk->status);
+                button->setStyleSheet("Text-align:left");
                 button->setCheckable(true);
                 button->setMinimumWidth(20);
                 button->setMaximumHeight(50);
@@ -104,11 +108,13 @@ void PartWidget::updateView()
             partLayout->addWidget(widget);
 
             QPushButton *button = new QPushButton("Не распределена\n"+humanSize(disk->size - sumPartSize));
+            button->setStyleSheet("Text-align:left");
             button->setCheckable(true);
             button->setMinimumWidth(20);
             button->setMaximumHeight(50);
             button->setSizePolicy(sp);
             partLayout->addWidget(button);
+            partGroup->addButton(button);
 
             hLayout->addLayout(partLayout);
         }

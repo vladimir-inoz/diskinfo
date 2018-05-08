@@ -7,14 +7,14 @@
 using namespace std;
 
 //размер диска в читаемом формате
-QString humanSize(double size) {
+QString humanSize(long long size) {
     int i = 0;
     QString units[] = {"B", "kB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"};
     while (size >= 1024) {
         size /= 1024;
         i++;
     }
-    QString result = QString::number(size) + " " + units[i];
+    QString result = QString::number(size,'f',2) + " " + units[i];
     return result;
 }
 
@@ -57,9 +57,9 @@ Win32_DiskDrive getDisks()
             dhGetValue(L"%s", &mediaType, wmiResSvc, L".MediaType");
             diskData->mediaType = QString::fromLocal8Bit(mediaType);
             dhGetValue(L"%s", &sz, wmiResSvc, L".Size");
-            diskData->size = QString(sz).toDouble();
+            diskData->size = QString(sz).toLongLong();
             dhGetValue(L"%s", &idx, wmiResSvc, L".Index");
-            diskData->index = QString(idx).toLong();
+            diskData->index = QString(idx).toLongLong();
 
             result[diskData->name] = diskData;
         } NEXT_THROW(wmiResSvc);
@@ -185,7 +185,7 @@ PartitionTable getAllPartitions()
                 pdata->FSType = QString::fromLocal8Bit(test);
 
                 dhGetValue(L"%s", &test, wmiResSvc, L".FreeSpace");
-                pdata->freeSpace = QString(test).toDouble();
+                pdata->freeSpace = QString(test).toLongLong();
             }
 
         } NEXT_THROW(wmiResSvc);

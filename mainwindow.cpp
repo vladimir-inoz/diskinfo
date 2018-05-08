@@ -11,7 +11,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     ui->setupUi(this);
     ui->tableView->setModel(&model);
-    model.updateData();
+    model.setData(table);
     ui->widget->setData(table);
 
     ui->tableView->verticalHeader()->setSectionResizeMode(QHeaderView::Fixed);

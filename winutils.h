@@ -8,7 +8,7 @@
 #include <windows.h>
 
 //возвращение строки с размером файла в читаемом формате
-QString humanSize(double size);
+QString humanSize(long long size);
 
 //данные о физическом диске
 struct DiskData
@@ -19,7 +19,7 @@ struct DiskData
     //съемный или несъемный диск
     QString mediaType;
     //объем диска
-    double size;
+    long long size;
 };
 
 //данные о разделах физического диска
@@ -32,8 +32,8 @@ struct PartitionData
     QString type;
     QString FSType; //тип файловой системы
     QString state;
-    double size; //объем
-    double freeSpace; //свободное место
+    long long size; //объем
+    long long freeSpace; //свободное место
 
     QString internalPartitionName;
 
