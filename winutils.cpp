@@ -8,13 +8,14 @@ using namespace std;
 
 //размер диска в читаемом формате
 QString humanSize(long long size) {
+    double m_size = size;
     int i = 0;
     QString units[] = {"B", "kB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"};
-    while (size >= 1024) {
-        size /= 1024;
+    while (m_size >= 1024) {
+        m_size /= 1024;
         i++;
     }
-    QString result = QString::number(size,'f',2) + " " + units[i];
+    QString result = QString::number(m_size,'f',2) + " " + units[i];
     return result;
 }
 
